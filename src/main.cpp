@@ -178,7 +178,7 @@ vector<uint8_t> encode_alphanumeric(string data,
 vector<uint8_t> encode_byte(string data, vector<uint8_t> &encoded_data) {
   for (size_t i = 0; i < data.length(); i++) {
     int char_code = (int)data[i];
-    int_to_bits(char_code, encoded_data);
+    int_to_bits_N(char_code, encoded_data, 8);
   }
   return encoded_data;
 }
@@ -329,15 +329,14 @@ void draw_data(vector<vector<uint8_t>> &qrcode,
   int size = qrcode.size();
   int i = 0;
   for (int right = size - 1; right >= 1;
-       right -= 2) { // Index of right column in each column pair
+       right -= 2) {
     if (right == 6)
       right = 5;
-    for (int vert = 0; vert < size; vert++) { // Vertical counter
+    for (int vert = 0; vert < size; vert++) {
       for (int j = 0; j < 2; j++) {
-        size_t x = static_cast<size_t>(right - j); // Actual x coordinate
+        size_t x = static_cast<size_t>(right - j);
         bool upward = ((right + 1) & 2) == 0;
-        size_t y = static_cast<size_t>(upward ? size - 1 - vert
-                                              : vert); // Actual y coordinate
+        size_t y = static_cast<size_t>(upward ? size - 1 - vert : vert);
         if (!is_module_reserved.at(y).at(x) && i < (int)data.size() * 8) {
           qrcode.at(y).at(x) = data.at(i >> 3) >> (7 - (i & 7)) & 1;
           i++;
@@ -504,7 +503,7 @@ int main() {
   uint8_t qrcode_version = 7;
   assert(qrcode_version > 0 && qrcode_version <= 40);
 
-  MODE_INDICATOR mode = ALPHANUMERIC;
+  MODE_INDICATOR mode = BYTE;
 
   unsigned int number_of_bits =
       determine_number_of_bits(error_code_correction_level, qrcode_version);
@@ -540,15 +539,6 @@ int main() {
   add_padding(encoded_data);
   add_extra_padding(encoded_data, number_of_bits);
 
-  int count = 1;
-  for (uint8_t code : encoded_data) {
-    std::cout << (int)code;
-    if (count % 8 == 0)
-      std::cout << " ";
-    count++;
-  }
-  std::cout << std::endl;
-
   // pack bits into uint8_t in BigEndian notation
   vector<uint8_t> dataCodewords(encoded_data.size() / 8);
   for (size_t i = 0; i < encoded_data.size(); i++)
@@ -563,10 +553,6 @@ int main() {
   vector<uint8_t> encoded_data_with_redondances = addEccAndInterleave(
       dataCodewords, qrcode_version, error_code_correction_level);
 
-  for (uint8_t code : encoded_data_with_redondances) {
-    std::cout << (int)code << " ";
-  }
-  std::cout << std::endl;
 
   /* --- Qrcode agencing info --- */
 

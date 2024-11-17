@@ -9,36 +9,6 @@ using std::size_t;
 using std::uint8_t;
 using std::vector;
 
-const int8_t ECC_CODEWORDS_PER_BLOCK[4][41] = {
-    {-1, 7,  10, 15, 20, 26, 18, 20, 24, 30, 18, 20, 24, 26,
-     30, 22, 24, 28, 30, 28, 28, 28, 28, 30, 30, 26, 28, 30,
-     30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30}, // Low
-    {-1, 10, 16, 26, 18, 24, 16, 18, 22, 22, 26, 30, 22, 22,
-     24, 24, 28, 28, 26, 26, 26, 26, 28, 28, 28, 28, 28, 28,
-     28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28}, // Medium
-    {-1, 13, 22, 18, 26, 18, 24, 18, 22, 20, 24, 28, 26, 24,
-     20, 30, 24, 28, 28, 26, 30, 28, 30, 30, 30, 30, 28, 30,
-     30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30}, // Quartile
-    {-1, 17, 28, 22, 16, 22, 28, 26, 26, 24, 28, 24, 28, 22,
-     24, 24, 30, 28, 28, 26, 28, 30, 24, 30, 30, 30, 30, 30,
-     30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30}, // High
-};
-
-const int8_t NUM_ERROR_CORRECTION_BLOCKS[4][41] = {
-    {-1, 1,  1,  1,  1,  1,  2,  2,  2,  2,  4,  4,  4,  4,
-     4,  6,  6,  6,  6,  7,  8,  8,  9,  9,  10, 12, 12, 12,
-     13, 14, 15, 16, 17, 18, 19, 19, 20, 21, 22, 24, 25}, // Low
-    {-1, 1,  1,  1,  2,  2,  4,  4,  4,  5,  5,  5,  8,  9,
-     9,  10, 10, 11, 13, 14, 16, 17, 17, 18, 20, 21, 23, 25,
-     26, 28, 29, 31, 33, 35, 37, 38, 40, 43, 45, 47, 49}, // Medium
-    {-1, 1,  1,  2,  2,  4,  4,  6,  6,  8,  8,  8,  10, 12,
-     16, 12, 17, 16, 18, 21, 20, 23, 23, 25, 27, 29, 34, 34,
-     35, 38, 40, 43, 45, 48, 51, 53, 56, 59, 62, 65, 68}, // Quartile
-    {-1, 1,  1,  2,  4,  4,  4,  5,  6,  8,  8,  11, 11, 16,
-     16, 18, 16, 19, 21, 25, 25, 25, 34, 30, 32, 35, 37, 40,
-     42, 45, 48, 51, 54, 57, 60, 63, 66, 70, 74, 77, 81}, // High
-};
-
 int getNumRawDataModules(int version) {
   int result = (16 * version + 128) * version + 64;
   if (version >= 2) {
@@ -102,14 +72,11 @@ vector<uint8_t> reedSolomonComputeRemainder(const vector<uint8_t> &data,
 }
 
 vector<uint8_t>
-addEccAndInterleave(vector<uint8_t> &data, unsigned short version,
+addEccAndInterleave(vector<uint8_t> &data, uint8_t version,
                     ERROR_CORRECTION_LEVEL errorCorrectionLevel) {
   // Calculate parameter numbers
-  int numBlocks =
-      NUM_ERROR_CORRECTION_BLOCKS[static_cast<int>(errorCorrectionLevel)]
-                                 [version];
-  int blockEccLen =
-      ECC_CODEWORDS_PER_BLOCK[static_cast<int>(errorCorrectionLevel)][version];
+  int numBlocks = NUM_ERROR_CORRECTION_BLOCKS[errorCorrectionLevel][version];
+  int blockEccLen = ECC_CODEWORDS_PER_BLOCK[errorCorrectionLevel][version];
   int rawCodewords = getNumRawDataModules(version) / 8;
   int numShortBlocks = numBlocks - rawCodewords % numBlocks;
   int shortBlockLen = rawCodewords / numBlocks;
@@ -121,7 +88,7 @@ addEccAndInterleave(vector<uint8_t> &data, unsigned short version,
     vector<uint8_t> dat(data.cbegin() + k,
                         data.cbegin() + (k + shortBlockLen - blockEccLen +
                                          (i < numShortBlocks ? 0 : 1)));
-    k += static_cast<int>(dat.size());
+    k += (int)dat.size();
     const vector<uint8_t> ecc = reedSolomonComputeRemainder(dat, rsDiv);
     if (i < numShortBlocks)
       dat.push_back(0);

@@ -128,7 +128,22 @@ void add_mode_indicator(MODE_INDICATOR mode, vector<uint8_t> &encoded_data) {
 vector<uint8_t> encode_numeric(string data, vector<uint8_t> &encoded_data) {
   for (size_t i = 0; i < data.length(); i += 3) {
     string sub_data = data.substr(i, std::min(3UL, data.length() - i));
-    int_to_bits(std::stoi(sub_data), encoded_data);
+    int num = std::stoi(sub_data);
+    int size = 3;
+    if(sub_data.length() ==  1)
+      size = 4;
+    else if(sub_data.length() == 2)
+      size = 7;
+    else{
+      if(sub_data[0] == '0' && sub_data[1] == '0')
+        size = 4;
+      else if(sub_data[0] == '0')
+          size = 7;
+      else 
+        size = 10;
+          
+    }
+    int_to_bits_N(num, encoded_data, size);
   }
   return encoded_data;
 }
@@ -496,14 +511,14 @@ void saveQRCodeToPGM(vector<std::vector<uint8_t>> &qrcode,
 }
 
 int main() {
-  string data = "Hello World !!!";
+  string data = "6445";
 
   ERROR_CORRECTION_LEVEL error_code_correction_level = L;
 
   uint8_t qrcode_version = 7;
   assert(qrcode_version > 0 && qrcode_version <= 40);
 
-  MODE_INDICATOR mode = BYTE;
+  MODE_INDICATOR mode = NUMERIC;
 
   unsigned int number_of_bits =
       determine_number_of_bits(error_code_correction_level, qrcode_version);

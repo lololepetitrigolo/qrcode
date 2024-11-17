@@ -497,11 +497,11 @@ void saveQRCodeToPGM(vector<std::vector<uint8_t>> &qrcode,
 }
 
 int main() {
-  string data = "HELLO WORLD";
+  string data = "Hello World !!!";
 
-  ERROR_CORRECTION_LEVEL error_code_correction_level = M;
+  ERROR_CORRECTION_LEVEL error_code_correction_level = L;
 
-  uint8_t qrcode_version = 1;
+  uint8_t qrcode_version = 7;
   assert(qrcode_version > 0 && qrcode_version <= 40);
 
   MODE_INDICATOR mode = ALPHANUMERIC;

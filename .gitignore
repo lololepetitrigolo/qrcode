@@ -1,5 +1,5 @@
-bin/*
-obj/*
+bin/
+obj/
 .cache/
 *.pgm
 compile_commands.json

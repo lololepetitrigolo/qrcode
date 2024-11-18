@@ -82,4 +82,7 @@ void draw_format_information(uint8_t qrcode_version,
 
 void add_padding_arround_qrcode(vector<vector<uint8_t>> &qrcode);
 
+uint8_t get_best_mask(vector<vector<uint8_t>> &qrcode,
+                      vector<vector<uint8_t>> &is_module_reserved);
+
 #endif // QRCODE_HPP

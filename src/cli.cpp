@@ -76,7 +76,7 @@ void read_user_input(string &data, uint8_t *qrcode_version,
   std::getline(std::cin, mask_str);
 
   try {
-    *mask_code = mask_str == "" ? 0 : std::stoi(mask_str);
+    *mask_code = mask_str == "" ? 8 : std::stoi(mask_str);
   } catch (...) {
     throw std::runtime_error("Enter a number please");
   }
@@ -127,5 +127,5 @@ void read_user_file(string &data, uint8_t *qrcode_version,
   *qrcode_version = determine_version(data.length(), *mode, L);
   *error_code_correction_level =
       upgrade_err_level(data.size(), *qrcode_version, *mode);
-  *mask_code = 0;
+  *mask_code = 8;
 }

@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <filesystem>
 #include <iostream>
 #include <ostream>
 #include <stdexcept>
@@ -163,28 +164,40 @@ int main(int argc, char *argv[]) {
 
   draw_timing_pattern(qrcode, is_module_reserved);
 
+  // Use to not overwrite functional part of the qrcode when writting data
   mark_reserved_information_module(qrcode_version, is_module_reserved);
 
+  // Add data to qrcode
   draw_data(qrcode, is_module_reserved, encoded_data_with_redondances);
+
+  // detect which mask is the best
+  // apply the best mask
+  if (mask_code == 8)
+    mask_code = get_best_mask(qrcode, is_module_reserved);
+
+  std::cout << "Mask : " << (int)mask_code << std::endl;
 
   apply_mask(mask_code, qrcode, is_module_reserved);
 
+  // Add the last information on qrcode
   draw_format_information(qrcode_version, error_code_correction_level,
                           mask_code, qrcode);
 
   draw_dark_module(qrcode_version, qrcode, is_module_reserved);
 
+  // For a better dectetion of Qr code with camera
   add_padding_arround_qrcode(qrcode);
 
   /* --- Output the genrated qrcode --- */
 
-  // Scaled it up to make a clear image
+  // Scaled it up to make a good quality image
   vector<vector<uint8_t>> qrcode_scaled = scaleUpQrcode(qrcode);
 
   std::cout << "\n--------------- Generated QR code ----------------\n";
   // Save it
   saveQRCodeToPGM(qrcode_scaled, "qrcode.pgm");
 
+  // Show a qrcode in ascci art or with kitten icat
   show_qrcode_in_shell(qrcode);
 
   return EXIT_SUCCESS;

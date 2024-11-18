@@ -1,4 +1,7 @@
+#include <algorithm>
 #include <cstdint>
+#include <cstdlib>
+#include <vector>
 
 #include "qrcode.hpp"
 
@@ -736,4 +739,155 @@ void add_padding_arround_qrcode(vector<vector<uint8_t>> &qrcode) {
   std::reverse(qrcode.begin(), qrcode.end());
   qrcode.push_back(empty_row);
   qrcode.push_back(empty_row);
+}
+
+unsigned compute_mask_penalty(vector<vector<uint8_t>> &qrcode) {
+  unsigned penalty = 0;
+
+  // Penalty 1 5 in a row
+  uint8_t prev_mod = qrcode[0][0];
+  uint8_t prev_seq = 0;
+
+  for (size_t y = 0; y < qrcode.size(); y++) {
+    for (size_t x = 0; x < qrcode.size(); x++) {
+      if (qrcode[y][x] == prev_mod) {
+        prev_seq++;
+        if (prev_seq == 5) {
+          penalty += 3;
+          prev_seq = 4;
+        }
+      } else {
+        prev_mod = qrcode[y][x];
+        prev_seq = 1;
+      }
+    }
+    prev_seq = 0;
+  }
+
+  for (size_t x = 0; x < qrcode.size(); x++) {
+    for (size_t y = 0; y < qrcode.size(); y++) {
+      if (qrcode[y][x] == prev_mod) {
+        prev_seq++;
+        if (prev_seq == 5) {
+          penalty += 3;
+          prev_seq = 4;
+        }
+      } else {
+        prev_mod = qrcode[y][x];
+        prev_seq = 1;
+      }
+    }
+    prev_seq = 0;
+  }
+
+  // Penalty 2 square malus
+  for (size_t y = 1; y < qrcode.size(); y++) {
+    for (size_t x = 1; x < qrcode.size(); x++) {
+      if (qrcode[y][x] == qrcode[y - 1][x - 1] &&
+          qrcode[y][x] == qrcode[y - 1][x] &&
+          qrcode[y][x] == qrcode[y][x - 1]) {
+        penalty += 3;
+      }
+    }
+  }
+
+  // Penalty 3 special seq
+  uint8_t seq[11] = {1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0};
+  bool b = true;
+
+  for (size_t y = 0; y < qrcode.size(); y++) {
+    for (size_t x = 0; x < qrcode.size() - 11; x++) {
+      for (size_t i = 0; i < 11; i++) {
+        if (qrcode[y][x + i] != seq[i]) {
+          b = false;
+          break;
+        }
+      }
+      if (b)
+        penalty += 40;
+      b = true;
+    }
+  }
+
+  for (size_t y = 0; y < qrcode.size(); y++) {
+    for (size_t x = 0; x < qrcode.size() - 11; x++) {
+      for (size_t i = 0; i < 11; i++) {
+        if (qrcode[y][x + i] != seq[10 - i]) {
+          b = false;
+          break;
+        }
+      }
+      if (b)
+        penalty += 40;
+      b = true;
+    }
+  }
+
+  for (size_t y = 0; y < qrcode.size() - 11; y++) {
+    for (size_t x = 0; x < qrcode.size(); x++) {
+      for (size_t i = 0; i < 11; i++) {
+        if (qrcode[y + i][x] != seq[i]) {
+          b = false;
+          break;
+        }
+      }
+      if (b)
+        penalty += 40;
+      b = true;
+    }
+  }
+
+  for (size_t y = 0; y < qrcode.size() - 11; y++) {
+    for (size_t x = 0; x < qrcode.size(); x++) {
+      for (size_t i = 0; i < 11; i++) {
+        if (qrcode[y + i][x] != seq[10 - i]) {
+          b = false;
+          break;
+        }
+      }
+      if (b)
+        penalty += 40;
+      b = true;
+    }
+  }
+
+  // Penalty 4 ratio
+  int black_white[2] = {0, 0};
+
+  for (size_t y = 0; y < qrcode.size() - 11; y++) {
+    for (size_t x = 0; x < qrcode.size(); x++) {
+      black_white[qrcode[y][x]]++;
+    }
+  }
+
+  float ratio = 100 * (float)black_white[0] / (qrcode.size() * qrcode.size());
+  int low_five_mult = (int)ratio - (int)ratio % 5;
+  int up_five_mult = (int)ratio + (5 - (int)ratio % 5);
+  penalty +=
+      std::min(std::abs(low_five_mult - 50), std::abs(up_five_mult - 50)) * 2;
+
+  return penalty;
+}
+
+uint8_t get_best_mask(vector<vector<uint8_t>> &qrcode,
+                      vector<vector<uint8_t>> &is_module_reserved) {
+  unsigned mask_penalty[8] = {0};
+
+  for (uint8_t mask_code = 0; mask_code < 8; mask_code++) {
+    apply_mask(mask_code, qrcode, is_module_reserved);
+    mask_penalty[mask_code] = compute_mask_penalty(qrcode);
+    apply_mask(mask_code, qrcode, is_module_reserved);
+  }
+
+  uint8_t best_mask_code = 0;
+  unsigned min_penalty = mask_penalty[0];
+
+  for (uint8_t mask_code = 1; mask_code < 8; mask_code++) {
+    if (min_penalty > mask_penalty[mask_code]) {
+      min_penalty = mask_penalty[mask_code];
+      best_mask_code = mask_code;
+    }
+  }
+
+  return best_mask_code;
 }

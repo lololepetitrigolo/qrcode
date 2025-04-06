@@ -18,7 +18,7 @@ void read_user_input(string &data, uint8_t *qrcode_version,
 
   std::cout << "\nChoose the recovery level (press enter to use auto mode "
                "selection) :\n\t- L for LOW 7%\n\t- M for "
-               "MEDIUM 15%\n\t- Q for QUARTILE 25%\n\t- H for HIGH 7%\n";
+               "MEDIUM 15%\n\t- Q for QUARTILE 25%\n\t- H for HIGH 30%\n";
   string error_code_correction_level_str;
   std::getline(std::cin, error_code_correction_level_str);
   if (error_code_correction_level_str == "L")
@@ -80,6 +80,7 @@ void read_user_input(string &data, uint8_t *qrcode_version,
   } catch (...) {
     throw std::runtime_error("Enter a number please");
   }
+
   if (*qrcode_version > 7)
     throw std::runtime_error("Enter a valide mask");
 

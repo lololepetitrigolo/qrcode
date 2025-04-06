@@ -67,6 +67,7 @@ void show_qrcode_in_shell(vector<vector<uint8_t>> &qrcode) {
   int ret_code = system("kitten icat --place 30x30@-1x-1 --scale-up "
                         "--align=left qrcode.pgm 2> /dev/null");
 
+
   if (ret_code != 0) {
     if (qrcode.size() > 70) {
       std::cout << "QR code too big to be printed in shell\n";
@@ -195,7 +196,7 @@ int main(int argc, char *argv[]) {
 
   std::cout << "\n--------------- Generated QR code ----------------\n";
   // Save it
-  saveQRCodeToPGM(qrcode_scaled, "qrcode.pgm");
+  saveQRCodeToPGM(qrcode_scaled, argc == 3 ? argv[2] : "qrcode.pgm");
 
   // Show a qrcode in ascci art or with kitten icat
   show_qrcode_in_shell(qrcode);
